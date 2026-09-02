@@ -1,0 +1,10 @@
+[
+    {
+        "pergunta":"Quantos Pokemon existem?",
+        "resposta":1025
+    },
+    {
+        "pergunta":"Quantos tipos de Pokemon existem?",
+        "resposta":"18"
+    }
+]
