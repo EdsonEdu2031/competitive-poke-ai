@@ -13,8 +13,8 @@ try:
 except (ValueError, FileNotFoundError):
     st.write("Não há questões cadastradas!")
 
-pergunta = st.text_area("Informe a pergunta: ", placeholder="Pergunta", key="pergunta")
-resposta = st.text_area("Informe a resposta: ", placeholder="Resposta", key="resposta")
+pergunta = str(st.text_area("Informe a pergunta: ", placeholder="Pergunta", key="pergunta"))
+resposta = str(st.text_area("Informe a resposta: ", placeholder="Resposta", key="resposta"))
 
 if st.button("Salvar", type="primary"):
     try:
@@ -22,7 +22,7 @@ if st.button("Salvar", type="primary"):
     except (ValueError, FileNotFoundError):
         df = pd.DataFrame(columns=["pergunta", "resposta"])
 
-    df.loc[len(df)] = {"pergunta": pergunta, "resposta": resposta}
+    df.loc[len(df)] = {"pergunta": f"{pergunta}", "resposta": f"{resposta}"}
 
     df.to_csv("Perguntas_Metagame.csv", index=False)
     st.success("Pergunta salva com sucesso!")
