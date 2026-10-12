@@ -1,0 +1,17 @@
+# Ambientes virtuais
+.venv/
+venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# Arquivos de configuração sensíveis
+.env
+
+# Cache de compilação do Unsloth
+/Codes/unsloth_compiled_cache/
+
+# Modelos e resultados
+/Models/
+/results/
