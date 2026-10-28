@@ -11,6 +11,7 @@ __pycache__/
 
 # Cache de compilação do Unsloth
 /Codes/unsloth_compiled_cache/
+/Codes/_unsloth_sentencepiece_temp/
 
 # Modelos e resultados
 /Models/
