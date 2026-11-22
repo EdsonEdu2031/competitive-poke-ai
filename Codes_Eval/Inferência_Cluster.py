@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
 
-modelo = sys.argv[1]
+nome_modelo = sys.argv[1]
 
 from pathlib import Path
 import json
@@ -69,11 +69,10 @@ nome_modelo_completo = {
     'Qwen':'Qwen3.5-4B'
 }
 
-#model_name = 'Llama-3.2-3B-Instruct'
-path = f'/mnt/di_ruralgpt/users/Edson/PokeAI/Models/{nome_modelo_completo[modelo]}'
+path = f'/mnt/di_ruralgpt/users/Edson/PokeAI/Models/{nome_modelo_completo[nome_modelo]}'
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name=path,
-    max_seq_length=4096,
+    max_seq_length=16384,
     load_in_4bit=True,
     device_map="cuda:0",
 )
@@ -85,7 +84,7 @@ if tokenizer.pad_token_id is None:
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Configurações Qdrant
-PASTA_QDRANT = "/mnt/di_ruralgpt/users/Edson/PokeAI/databases/RAG/Metagame/qdrant_db"
+PASTA_QDRANT = f"/mnt/di_ruralgpt/users/Edson/PokeAI/database/databases/RAG/Metagame/qdrant_db_{nome_modelo}"
 COLECAO = "pokeai_minilm_text"
 MODELO = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
@@ -96,7 +95,7 @@ modelo = SentenceTransformer(MODELO, device="cuda")
 client = QdrantClient(path=PASTA_QDRANT)
 
 # Carregamento do arquivo CSV com as perguntas
-df = pd.read_csv("/mnt/di_ruralgpt/users/Edson/PokeAI/databases/P&R/Metagame/02112026_Perguntas_Metagame.csv")
+df = pd.read_csv("/mnt/di_ruralgpt/users/Edson/PokeAI/database/databases/P&R/Metagame/02112026_Perguntas_Metagame.csv")
 
 if "contexto_RAG" not in df.columns:
     df["contexto_RAG"] = ""
@@ -109,11 +108,14 @@ total = len(df)
 # Prompt
 instruction = open("/mnt/di_ruralgpt/users/Edson/PokeAI/competitive-poke-ai/Codes/Prompts/prompt_Inferência.txt", "r", encoding="utf-8").read()
 
-
 # Iterar sobre todas as perguntas fazendo a inferência
 for index, row in df.iterrows():
     logging.info(f"Gerando resposta para questão {index+1}/{total}")
     pergunta = row['pergunta']
+
+    if pd.notna(row['resposta_gerada']) and row['resposta_gerada'].strip() != "":
+        continue
+
     contextos = recuperar_contexto(pergunta, k=K)
     trechos_RAG = montar_contexto(contextos)
     
@@ -136,7 +138,7 @@ for index, row in df.iterrows():
     prompt = instruction + infos
     messages = [{"role": "user", "content": prompt}]
 
-    if modelo == 'Qwen':
+    if nome_modelo in ['Qwen', 'DeepSeek']:
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
     else:
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -155,8 +157,8 @@ for index, row in df.iterrows():
     df.at[index, 'resposta_gerada'] = hypothesis
     logging.info(f'\nPergunta {index+1}: {pergunta} \n\n Resposta: {hypothesis}')
     if index % 10 == 0:
-        df.to_csv(f"/mnt/di_ruralgpt/users/Edson/PokeAI/databases/P&R/Metagame/Results/Eval_{modelo}_Perguntas_Metagame.csv", index=False)
+        df.to_csv(f"/mnt/di_ruralgpt/users/Edson/PokeAI/database/databases/P&R/Metagame/Results/Eval_{nome_modelo}_Perguntas_Metagame.csv", index=False)
         logging.info(f"Progresso salvo após {index+1} perguntas processadas.")
-df.to_csv(f"/mnt/di_ruralgpt/users/Edson/PokeAI/databases/P&R/Metagame/Results/Eval_{modelo}_Perguntas_Metagame.csv", index=False)
+df.to_csv(f"/mnt/di_ruralgpt/users/Edson/PokeAI/database/databases/P&R/Metagame/Results/Eval_{nome_modelo}_Perguntas_Metagame.csv", index=False)
 
 client.close()
