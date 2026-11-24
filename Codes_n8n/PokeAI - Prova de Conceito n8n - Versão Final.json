@@ -1,0 +1,539 @@
+{
+  "name": "PokeAI - Prova de Conceito n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "id": "4b572fc7-b8a0-41cf-9a28-60c8bea501a1",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        96,
+        368
+      ],
+      "webhookId": "cae40cc9-9e8d-4283-9cbb-53ea4ecd4ec3"
+    },
+    {
+      "parameters": {
+        "content": "# 1. Entrada\nPergunta pelo chat.",
+        "height": 392,
+        "width": 280,
+        "color": 2
+      },
+      "id": "56208c76-45b7-4e6c-9e99-c4cd87cfb415",
+      "name": "Nota 1. Entrada1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# 2. Agentes Metagame (RAG)\n",
+        "height": 808,
+        "width": 800,
+        "color": 4
+      },
+      "id": "50c902cf-aecd-4780-9ef2-abb23a6de079",
+      "name": "Nota 2. Agente Metagame (RAG + Llama)1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        464,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# 3. Julgador/Refinador\nConfere se a resposta está completa; se não, refaz a pergunta.",
+        "height": 316,
+        "width": 808,
+        "color": 3
+      },
+      "id": "7f646902-e8fe-4ba2-a9c5-03e52f8d4074",
+      "name": "Nota 3. Julgador/Refinador1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "respostas = _items\n\nif len(respostas) != 4:\n    raise ValueError(\n        f\"Esperadas 4 respostas dos modelos; recebidas: {len(respostas)}\"\n    )\n\nreturn [{\n    \"json\": {\n        \"resposta1\": respostas[0][\"json\"],\n        \"resposta2\": respostas[1][\"json\"],\n        \"resposta3\": respostas[2][\"json\"],\n        \"resposta4\": respostas[3][\"json\"]\n    }\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        352
+      ],
+      "id": "27fedb22-24a1-4b60-925a-256d300732e8",
+      "name": "Formatando Saída"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        864,
+        320
+      ],
+      "id": "4876442e-d1ab-43e0-a41e-666dcb07c96a",
+      "name": "Juntando as saídas"
+    },
+    {
+      "parameters": {
+        "content": "# 4. Saída\n",
+        "height": 344,
+        "width": 520,
+        "color": 2
+      },
+      "id": "42292c31-99b3-4fd6-a557-ea9677cfe8ae",
+      "name": "Nota 1. Entrada2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2544,
+        240
+      ],
+      "id": "1881b3a1-3288-4045-adfd-85cb63596483",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/responder",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"pergunta\": $json.pergunta || $('Chat Trigger').first().json.chatInput,\n  \"nome_modelo\": \"Llama\"\n} }}",
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        112
+      ],
+      "id": "49de6cce-ce83-416a-a3ce-95c2764f9cf1",
+      "name": "Chamada Llama"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/responder",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"pergunta\": $json.pergunta || $('Chat Trigger').first().json.chatInput,\n  \"nome_modelo\": \"Qwen\"\n} }}",
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        288
+      ],
+      "id": "604aea88-bfd9-4027-a703-204782558e02",
+      "name": "Chamada Qwen"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/responder",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"pergunta\": $json.pergunta || $('Chat Trigger').first().json.chatInput,\n  \"nome_modelo\": \"Gemma\"\n} }}",
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        448
+      ],
+      "id": "ac4292b1-ffbb-4609-a67a-405fe4c6d05a",
+      "name": "Chamada Gemma"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/responder",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"pergunta\": $json.pergunta || $('Chat Trigger').first().json.chatInput,\n  \"nome_modelo\": \"DeepSeek\"\n} }}",
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        608
+      ],
+      "id": "5bd46cf0-9010-47db-a5c4-c9f863090214",
+      "name": "Chamada DeepSeek"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/avaliar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1424,
+        352
+      ],
+      "id": "fc47309b-b4c0-4430-a782-bbecef80a37c",
+      "name": "Agente Refinador"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "762f86e2-eb41-45ce-851a-b5e6c942534f",
+              "leftValue": "={{ $json.sem_nova_pergunta }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "406b3c6e-fd78-42f5-bbc7-03f9c02924b6",
+      "name": "Tem pergunta complementar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        2016,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "9c332f29-726c-4d9b-a547-760fe532adea",
+              "leftValue": "={{ $json.nova_consulta }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "d6767e87-45e4-4894-8eef-b10cc7d6f34d",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lt",
+                "name": "filter.operator.lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1648,
+        352
+      ],
+      "id": "2b19227c-27ed-41a9-952d-a920f50c31e4",
+      "name": "Nova consulta?"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "\nitens = _items\nrefinamento = itens[0][\"json\"]\n\npergunta = (refinamento.get(\"pergunta_nova_consulta\") or \"\").strip()\n\nif not pergunta:\n    return [{\n        \"json\": {\n            \"sem_nova_pergunta\": True,\n            \"resposta_escolhida\": refinamento.get(\"resposta_escolhida\", \"\")\n        }\n    }]\n\nreturn [{\n    \"json\": {\n        \"pergunta\": pergunta\n    }\n}]\n"
+      },
+      "id": "154f1a5c-72cd-4fa8-a5b8-5d5603952c78",
+      "name": "Preparar 2ª rodada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "duplicateItem": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d19534c2-2134-4877-9aa3-f6eec42dbb8e",
+              "name": "output",
+              "value": "={{ $json.resposta_escolhida || $json.resposta || 'Não foi possível gerar uma resposta.' }}",
+              "type": "string"
+            },
+            {
+              "id": "47819f0d-39a1-4970-bc42-6bbbc99b4207",
+              "name": "sessionId",
+              "value": "={{ $('Chat Trigger').first().json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8507256-0495-46d5-98fe-55c3bff45f30",
+      "name": "Preparar resposta final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2320,
+        240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Chamada Llama",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada Qwen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada Gemma",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada DeepSeek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatando Saída": {
+      "main": [
+        [
+          {
+            "node": "Agente Refinador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntando as saídas": {
+      "main": [
+        [
+          {
+            "node": "Formatando Saída",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada Llama": {
+      "main": [
+        [
+          {
+            "node": "Juntando as saídas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada Qwen": {
+      "main": [
+        [
+          {
+            "node": "Juntando as saídas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Chamada Gemma": {
+      "main": [
+        [
+          {
+            "node": "Juntando as saídas",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Chamada DeepSeek": {
+      "main": [
+        [
+          {
+            "node": "Juntando as saídas",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Agente Refinador": {
+      "main": [
+        [
+          {
+            "node": "Nova consulta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem pergunta complementar?": {
+      "main": [
+        [
+          {
+            "node": "Preparar resposta final",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chamada Llama",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada Qwen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada Gemma",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chamada DeepSeek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nova consulta?": {
+      "main": [
+        [
+          {
+            "node": "Preparar 2ª rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar resposta final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar 2ª rodada": {
+      "main": [
+        [
+          {
+            "node": "Tem pergunta complementar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar resposta final": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fbc96443-a7e2-40c0-be12-699b51327814",
+  "meta": {
+    "instanceId": "f7386493346d429418820123f6c934d214b0e275c439800eef7911926681c5f3"
+  },
+  "nodeGroups": [],
+  "id": "AiBgaPee7HKRkmzi",
+  "tags": []
+}

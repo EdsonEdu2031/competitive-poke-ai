@@ -6,3 +6,9 @@ __pycache__/
 /Codes_Eval/unsloth_compiled_cache/
 /Codes_Eval/_unsloth_sentencepiece_temp/
 /Codes_Eval/Jobs/
+
+/Codes_n8n/unsloth_compiled_cache/
+/Codes_n8n/Old/
+/Codes_n8n/.env
+/Codes_n8n/logs
+/Codes_n8n/__pycache__/
